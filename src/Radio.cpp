@@ -20,6 +20,8 @@
 namespace radio
 {
 
+uint32_t Message::_nextNumber = 0;
+
 //#define ENABLE_DEBUG_LOG
 
 static const uint8_t ReceiveAddress[] = { 'S', 'M', 'R', 'H', '1' };
@@ -39,35 +41,37 @@ Radio::Radio(uint8_t transceiverChannel)
     initTransceiver();
 }
 
-bool Radio::sendCommand(Command command, const std::string& address)
+bool Radio::sendMessage(Message message)
 {
-    // auto task = std::make_shared<Task>(createCommandRequest(command, address));
+    _log.debug("sending message (enqueue): number=%lu, address=%s, length=%lu",
+        message.number, message.address.c_str(), message.payload.size());
 
-    // m_queue.enqueue([this, task] {
-    //     auto response = sendRequest(task->request);
-    //     task->promise.set_value(response);
-    // });
+    _transmitQueue.push(std::move(message));
 
-    // return task->promise.get_future();
+    _log.debug("pending messages in transmit queue: %lu", _transmitQueue.size());
+
     return true;
 }
 
-bool Radio::readStatus(const std::string& address)
+bool Radio::hasIncomingMessage() const
 {
-    // auto task = std::make_shared<Task>(createStatusRequest(address));
+    return !_receiveQueue.empty();
+}
 
-    // m_queue.enqueue([this, task] {
-    //     auto response = sendRequest(task->request);
-    //     task->promise.set_value(response);
-    // });
+Message Radio::nextIncomingMessage()
+{
+    auto message = std::move(_receiveQueue.front());
+    _receiveQueue.pop();
 
-    // return task->promise.get_future();
-    return true;
+    _log.debug("dequeued message: number=%lu, address=%s, length=%lu",
+        message.number, message.address.c_str(), message.payload.size());
+
+    return message;
 }
 
 void Radio::task()
 {
-
+    runStateMachine();
 }
 
 void Radio::initTransceiver()
@@ -160,177 +164,105 @@ void Radio::setTransceiverMode(const TransceiverMode mode, const std::string& tx
 #endif
 }
 
-std::vector<protocol_msg_t> Radio::readIncomingMessages()
-{
-    _log.debug("data received");
-
-    std::vector<protocol_msg_t> messages;
-
-    while (1)
-    {
-        auto fifoStatus = nrf24_get_fifo_status(&m_nrf);
-
-        if (fifoStatus.RX_EMPTY)
-        {
-            _log.debug("RX FIFO empty");
-            break;
-        }
-
-        _log.debug("reading incoming payload");
-
-        protocol_msg_t msg;
-
-        nrf24_read_rx_payload(&m_nrf, msg.data, sizeof(protocol_msg_t));
-
-        if (msg.msg_magic != PROTO_MSG_MAGIC)
-        {
-            _log.warning("incoming protocol message is invalid");
-            break;
-        }
-
-        messages.push_back(std::move(msg));
-    };
-
-    return messages;
-}
-
-Radio::InterruptResult Radio::checkInterrupt()
-{
-    if (isInterruptTriggered())
-    {
-        auto status = nrf24_get_status(&m_nrf);
-
-#if defined ENABLE_DEBUG_LOG && defined NRF24_ENABLE_DUMP_REGISTERS
-        nrf24_dump_registers(&m_nrf);
-#endif
-
-        nrf24_clear_interrupts(&m_nrf);
-
-        if (status.MAX_RT)
-            return InterruptResult::PacketLost;
-
-        if (status.RX_DR)
-            return InterruptResult::DataReceived;
-
-        if (status.TX_DS)
-            return InterruptResult::DataSent;
-    }
-
-    return InterruptResult::Timeout;
-}
-
 bool Radio::isInterruptTriggered() const
 {
     return digitalRead(Pins::NrfIrq) == 0;
 }
 
-Radio::InterruptResult Radio::waitForInterrupt()
+void Radio::runStateMachine()
 {
-    _log.debug("waiting for interrupt");
+    switch (_state) {
+        case State::Idle: {
+            if (isInterruptTriggered()) {
+                const auto status = nrf24_get_status(&m_nrf);
 
-    auto startTime = std::chrono::steady_clock::now();
-    auto result = InterruptResult::Timeout;
+                if (status.RX_DR) {
+                    _log.debug("message received");
+                    _state = State::ReadReceivedMessages;
+                    break;
+                }
+            }
 
-    while (std::chrono::steady_clock::now() - startTime < std::chrono::seconds(2))
-    {
-        if (isInterruptTriggered())
-        {
-            result = checkInterrupt();
+            if (!_transmitQueue.empty()) {
+                _log.debug("sending next message from transmit queue");
+                _state = State::SendNextQueuedMessage;
+            }
+
             break;
         }
 
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        case State::SendNextQueuedMessage: {
+            const auto message = std::move(_transmitQueue.front());
+            _transmitQueue.pop();
+            _log.debug("remaining message in transmit queue: %lu", _transmitQueue.size());
+
+            setTransceiverMode(TransceiverMode::PrimaryTransmitter, message.address);
+            nrf24_write_tx_payload(&m_nrf, message.payload.data(), message.payload.size());
+            nrf24_power_up(&m_nrf);
+
+            _state = State::WaitForMessageSent;
+            _timer = millis();
+
+            break;
+        }
+
+        case State::WaitForMessageSent: {
+            if (!isInterruptTriggered()) {
+                if (millis() - _timer >= MessageSendTimeoutMs) {
+                    _log.error("message sending timed out");
+
+                    setTransceiverMode(TransceiverMode::PrimaryReceiver);
+                    nrf24_power_up(&m_nrf);
+
+                    _state = State::Idle;
+
+                    break;
+                }
+
+                const auto status = nrf24_get_status(&m_nrf);
+
+                if (status.TX_DS) {
+                    _log.debug("message sent");
+                } else if (status.MAX_RT) {
+                    _log.debug("maximum transmit retry count reached");
+                }
+
+                setTransceiverMode(TransceiverMode::PrimaryReceiver);
+                nrf24_power_up(&m_nrf);
+
+                _state = State::Idle;
+            }
+
+            break;
+        }
+
+        case State::ReadReceivedMessages: {
+            _log.debug("reading received messages");
+
+            while (!nrf24_get_fifo_status(&m_nrf).RX_EMPTY) {
+                Message::Payload payload;
+                payload.resize(NRF24_DEFAULT_PAYLOAD_LEN);
+                nrf24_read_rx_payload(&m_nrf, payload.data(), payload.size());
+
+                std::vector<uint8_t> address;
+                address.resize(5);
+                nrf24_get_rx_address(&m_nrf, 0, address.data(), address.size());
+
+                Message message{
+                    std::string{ reinterpret_cast<const char*>(address.data()), address.size() },
+                    std::move(payload)
+                };
+
+                _receiveQueue.push(std::move(message));
+            }
+
+            _log.debug("pending received messages: %lu", _receiveQueue.size());
+
+            _state = State::Idle;
+
+            break;
+        }
     }
-
-    // qCDebug(RadioLog) << "interrupt result:" << result;
-
-    return result;
 }
-
-Result Radio::sendProtocolMsg(const std::string& address, const protocol_msg_t& msg)
-{
-    _log.debug("sending protocol message to: %s, length: %u", address.c_str(), sizeof(protocol_msg_t));
-
-#ifdef ENABLE_DEBUG_LOG
-    print_protocol_message(&msg);
-#endif
-
-    setTransceiverMode(TransceiverMode::PrimaryTransmitter, address);
-
-    nrf24_write_tx_payload(&m_nrf, msg.data, sizeof(protocol_msg_t));
-    nrf24_power_up(&m_nrf);
-
-    auto interruptResult = waitForInterrupt();
-
-    if (interruptResult == InterruptResult::Timeout)
-        return Result::Timeout;
-
-    if (interruptResult == InterruptResult::PacketLost)
-        return Result::PacketLost;
-
-    // assert(interruptResult == InterruptResult::DataSent);
-
-    return Result::Succeeded;
-}
-
-Result Radio::receiveProtocolMessages(std::vector<protocol_msg_t>& messages)
-{
-    _log.debug("receiving protocol messages");
-
-    setTransceiverMode(TransceiverMode::PrimaryReceiver);
-
-    nrf24_power_up(&m_nrf);
-
-    auto interruptResult = waitForInterrupt();
-
-    if (interruptResult == InterruptResult::Timeout)
-        return Result::Timeout;
-
-    // assert(interruptResult == InterruptResult::DataReceived);
-
-    messages = readIncomingMessages();
-
-    _log.debug("number of received messages: %d", messages.size());
-
-    return Result::Succeeded;
-}
-
-Response Radio::sendRequest(const Request& request)
-{
-    Response response;
-
-    response.result = sendProtocolMsg(request.address, request.msg);
-
-    if (response.result != Result::Succeeded)
-        return response;
-
-    response.result = receiveProtocolMessages(response.messages);
-
-    return response;
-}
-
-// QDebug& operator<<(QDebug& dbg, Radio::InterruptResult ir)
-// {
-//     switch (ir)
-//     {
-//     case Radio::InterruptResult::DataReceived:
-//         dbg << "DataReceived";
-//         break;
-
-//     case Radio::InterruptResult::DataSent:
-//         dbg << "DataSent";
-//         break;
-
-//     case Radio::InterruptResult::Timeout:
-//         dbg << "Timeout";
-//         break;
-
-//     case Radio::InterruptResult::PacketLost:
-//         dbg << "PacketLost";
-//         break;
-//     }
-
-//     return dbg;
-// }
 
 }
