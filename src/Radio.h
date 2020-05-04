@@ -42,7 +42,7 @@ class Radio
 public:
     Radio(uint8_t transceiverChannel);
 
-    bool sendMessage(Message message);
+    bool sendMessage(Message&& message);
 
     bool hasIncomingMessage() const;
     Message nextIncomingMessage();

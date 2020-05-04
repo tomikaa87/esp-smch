@@ -9,6 +9,7 @@ Smch::Smch()
     : _ntpClient(_systemClock)
     , _otaUpdater(PrivateConfig::OtaUpdateBaseUrl, _systemClock)
     , _radio(0)
+    , _deviceHub(_radio)
     , _updateCheckTimer(millis())
 {
     _log.info("initializing, firmware version: %d.%d.%d", FW_VER_MAJOR, FW_VER_MINOR, FW_VER_PATCH);
@@ -22,6 +23,9 @@ void Smch::task()
     _ntpClient.task();
     _otaUpdater.task();
     _radio.task();
+    _deviceHub.task();
+
+    static int counter = 0;
 
     // Slow loop
     if (_lastSlowLoopRun == 0 || millis() - _lastSlowLoopRun >= SlowLoopRunIntervalMs) {
@@ -31,6 +35,15 @@ void Smch::task()
             _updateChecked = true;
             _otaUpdater.forceUpdate();
         }
+
+        if (counter < 6) {
+            ++counter;
+        }
+    }
+
+    if (counter == 6) {
+        counter = 7;
+        _deviceHub.startScan();
     }
 }
 

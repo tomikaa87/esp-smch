@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DeviceHub.h"
 #include "Logger.h"
 #include "NtpClient.h"
 #include "OtaUpdater.h"
@@ -21,6 +22,7 @@ private:
     NtpClient _ntpClient;
     OtaUpdater _otaUpdater;
     radio::Radio _radio;
+    DeviceHub _deviceHub;
 
     static constexpr auto SlowLoopRunIntervalMs = 500;
     uint32_t _lastSlowLoopRun = 0;

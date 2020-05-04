@@ -22,7 +22,7 @@ namespace radio
 
 uint32_t Message::_nextNumber = 0;
 
-//#define ENABLE_DEBUG_LOG
+// #define ENABLE_DEBUG_LOG
 
 static const uint8_t ReceiveAddress[] = { 'S', 'M', 'R', 'H', '1' };
 
@@ -41,7 +41,7 @@ Radio::Radio(uint8_t transceiverChannel)
     initTransceiver();
 }
 
-bool Radio::sendMessage(Message message)
+bool Radio::sendMessage(Message&& message)
 {
     _log.debug("sending message (enqueue): number=%lu, address=%s, length=%lu",
         message.number, message.address.c_str(), message.payload.size());
@@ -194,7 +194,7 @@ void Radio::runStateMachine()
         case State::SendNextQueuedMessage: {
             const auto message = std::move(_transmitQueue.front());
             _transmitQueue.pop();
-            _log.debug("remaining message in transmit queue: %lu", _transmitQueue.size());
+            _log.debug("remaining messages in transmit queue: %lu", _transmitQueue.size());
 
             setTransceiverMode(TransceiverMode::PrimaryTransmitter, message.address);
             nrf24_write_tx_payload(&m_nrf, message.payload.data(), message.payload.size());
@@ -239,6 +239,9 @@ void Radio::runStateMachine()
         case State::ReadReceivedMessages: {
             _log.debug("reading received messages");
 
+            nrf24_power_down(&m_nrf);
+            nrf24_clear_interrupts(&m_nrf);
+
             while (!nrf24_get_fifo_status(&m_nrf).RX_EMPTY) {
                 Message::Payload payload;
                 payload.resize(NRF24_DEFAULT_PAYLOAD_LEN);
@@ -255,6 +258,8 @@ void Radio::runStateMachine()
 
                 _receiveQueue.push(std::move(message));
             }
+
+            nrf24_power_up(&m_nrf);
 
             _log.debug("pending received messages: %lu", _receiveQueue.size());
 
