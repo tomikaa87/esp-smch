@@ -1,56 +1,18 @@
-#include "FirmwareVersion.h"
 #include "PrivateConfig.h"
 #include "Smch.h"
 
-#include <ESP8266WiFi.h>
-#include <ESP8266WiFiSTA.h>
-
-Smch::Smch()
-    : _ntpClient(_systemClock)
-    , _otaUpdater(PrivateConfig::OtaUpdateBaseUrl, _systemClock)
+Smch::Smch(const ApplicationConfig& appConfig)
+    : _coreApplication(appConfig)
+    , _appConfig(appConfig)
     , _radio(0)
     , _deviceHub(_radio)
-    , _updateCheckTimer(millis())
 {
-    _log.info("initializing, firmware version: %d.%d.%d", FW_VER_MAJOR, FW_VER_MINOR, FW_VER_PATCH);
-
-    setupWiFi();
+    Logger::setup(_appConfig, _coreApplication.systemClock());
 }
 
 void Smch::task()
 {
-    _systemClock.task();
-    _ntpClient.task();
-    _otaUpdater.task();
+    _coreApplication.task();
     _radio.task();
     _deviceHub.task();
-
-    static int counter = 0;
-
-    // Slow loop
-    if (_lastSlowLoopRun == 0 || millis() - _lastSlowLoopRun >= SlowLoopRunIntervalMs) {
-        _lastSlowLoopRun = millis();
-
-        if (!_updateChecked && WiFi.isConnected() && millis() - _updateCheckTimer >= 5000) {
-            _updateChecked = true;
-            _otaUpdater.forceUpdate();
-        }
-
-        if (counter < 6) {
-            ++counter;
-        }
-    }
-
-    if (counter == 6) {
-        counter = 7;
-        _deviceHub.startScan();
-    }
-}
-
-void Smch::setupWiFi()
-{
-    WiFi.mode(WIFI_STA);
-    WiFi.setPhyMode(WIFI_PHY_MODE_11N);
-    WiFi.setOutputPower(20.5);
-    WiFi.begin(PrivateConfig::WiFiSSID, PrivateConfig::WiFiPassword);
 }

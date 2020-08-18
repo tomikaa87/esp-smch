@@ -1,20 +1,25 @@
-#include <Arduino.h>
-#include <SPI.h>
-
 #include "Smch.h"
+#include "PrivateConfig.h"
 
-Smch* _smch;
+#include <Arduino.h>
+
+#include <memory>
+
+static std::unique_ptr<Smch> smch;
 
 void setup()
 {
-    Serial.begin(115200);
-    SPI.begin();
+    static ApplicationConfig appConfig;
 
-    static Smch smch;
-    _smch = &smch;
+    appConfig.firmwareVersion = VersionNumber{ 1, 0, 0 };
+
+    appConfig.wifi.password = Config::WiFi::Password;
+    appConfig.wifi.ssid = Config::WiFi::SSID;
+
+    smch.reset(new Smch(appConfig));
 }
 
 void loop()
 {
-    _smch->task();
+    smch->task();
 }
