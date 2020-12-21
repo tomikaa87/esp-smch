@@ -17,7 +17,7 @@ void setup()
     appConfig.blynk.serverHostName = Config::Blynk::ServerHostName;
     appConfig.blynk.serverPort = Config::Blynk::ServerPort;
 
-    appConfig.logging.syslog.enabled = false;
+    appConfig.logging.syslog.enabled = true;
     appConfig.logging.syslog.hostName = Config::Logging::SyslogHostName;
     appConfig.logging.syslog.serverHostName = Config::Logging::SyslogServerHost;
     appConfig.logging.syslog.serverPort = Config::Logging::SyslogServerPort;
