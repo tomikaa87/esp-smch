@@ -13,6 +13,19 @@ void setup()
 
     appConfig.firmwareVersion = VersionNumber{ 1, 0, 0 };
 
+    appConfig.blynk.appToken = Config::Blynk::AppToken;
+    appConfig.blynk.serverHostName = Config::Blynk::ServerHostName;
+    appConfig.blynk.serverPort = Config::Blynk::ServerPort;
+    // appConfig.blynk.sslFingerprint = Config::Blynk::SslFingerprint;
+
+    appConfig.logging.syslog.enabled = false;
+    appConfig.logging.syslog.hostName = Config::Logging::SyslogHostName;
+    appConfig.logging.syslog.serverHostName = Config::Logging::SyslogServerHost;
+    appConfig.logging.syslog.serverPort = Config::Logging::SyslogServerPort;
+
+    appConfig.otaUpdate.updateCheckIntervalMs = 60000;
+    appConfig.otaUpdate.updateUrl = Config::OtaUpdate::FirmwareUpdateUrl;
+
     appConfig.wifi.password = Config::WiFi::Password;
     appConfig.wifi.ssid = Config::WiFi::SSID;
 

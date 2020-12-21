@@ -56,4 +56,16 @@ protocol_cmd_t commandToProtocolCmd(Command command)
     return PROTO_CMD_NOP;
 }
 
+std::string deviceIndexToAddress(const uint8_t index)
+{
+    if (index > 9) {
+        return {};
+    } 
+
+    std::string s{ "SMRR0" };
+    s[4] = '0' + index;
+
+    return s;
+}
+
 }

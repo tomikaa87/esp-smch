@@ -8,8 +8,8 @@ extern "C"
 
 #include <stdint.h>
 
-#define NRF24_ENABLE_DUMP_REGISTERS
-//#define NRF24_ENABLE_DEBUG_LOG
+// #define NRF24_ENABLE_DUMP_REGISTERS
+// #define NRF24_ENABLE_DEBUG_LOG
 
 //
 // Registers and masks
@@ -187,19 +187,21 @@ typedef enum
     NRF24_LNA_GAIN_STEP2
 } nrf24_lna_gain_t;
 
+#define NRF24_PACKED __attribute__((packed))
+
 typedef union
 {
     struct
     {
-        unsigned PRIM_RX :1;
-        unsigned PWR_UP :1;
-        unsigned CRCO :1;
-        unsigned EN_CRC :1;
-        unsigned MASK_MAX_RT :1;
-        unsigned MASK_TX_DS :1;
-        unsigned MASK_RX_DR :1;
-        unsigned reserved :1;
-    };
+        uint8_t PRIM_RX :1;
+        uint8_t PWR_UP :1;
+        uint8_t CRCO :1;
+        uint8_t EN_CRC :1;
+        uint8_t MASK_MAX_RT :1;
+        uint8_t MASK_TX_DS :1;
+        uint8_t MASK_RX_DR :1;
+        uint8_t reserved :1;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_config_t;
@@ -208,14 +210,14 @@ typedef union
 {
     struct
     {
-        unsigned ENAA_P0 :1;
-        unsigned ENAA_P1 :1;
-        unsigned ENAA_P2 :1;
-        unsigned ENAA_P3 :1;
-        unsigned ENAA_P4 :1;
-        unsigned ENAA_P5 :1;
-        unsigned reserved :2;
-    };
+        uint8_t ENAA_P0 :1;
+        uint8_t ENAA_P1 :1;
+        uint8_t ENAA_P2 :1;
+        uint8_t ENAA_P3 :1;
+        uint8_t ENAA_P4 :1;
+        uint8_t ENAA_P5 :1;
+        uint8_t reserved :2;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_en_aa_t;
@@ -224,14 +226,14 @@ typedef union
 {
     struct
     {
-        unsigned EN_P0 :1;
-        unsigned EN_P1 :1;
-        unsigned EN_P2 :1;
-        unsigned EN_P3 :1;
-        unsigned EN_P4 :1;
-        unsigned EN_P5 :1;
-        unsigned reserved :2;
-    };
+        uint8_t EN_P0 :1;
+        uint8_t EN_P1 :1;
+        uint8_t EN_P2 :1;
+        uint8_t EN_P3 :1;
+        uint8_t EN_P4 :1;
+        uint8_t EN_P5 :1;
+        uint8_t reserved :2;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_en_rxaddr_t;
@@ -248,8 +250,8 @@ typedef union
     struct
     {
         nrf24_aw_t AW :2;
-        unsigned reserved :6;
-    };
+        uint8_t reserved :6;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_setup_aw_t;
@@ -258,9 +260,9 @@ typedef union
 {
     struct
     {
-        unsigned RF_CH :7;
-        unsigned reserved :1;
-    };
+        uint8_t RF_CH :7;
+        uint8_t reserved :1;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_rf_ch_t;
@@ -269,13 +271,13 @@ typedef union
 {
     struct
     {
-        unsigned TX_FULL :1;
-        unsigned RX_P_NO :3;
-        unsigned MAX_RT :1;
-        unsigned TX_DS :1;
-        unsigned RX_DR :1;
-        unsigned reserved :1;
-    };
+        uint8_t TX_FULL :1;
+        uint8_t RX_P_NO :3;
+        uint8_t MAX_RT :1;
+        uint8_t TX_DS :1;
+        uint8_t RX_DR :1;
+        uint8_t reserved :1;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_status_t;
@@ -284,14 +286,14 @@ typedef union
 {
     struct
     {
-        unsigned RX_EMPTY :1;
-        unsigned RX_FULL :1;
-        unsigned reserved1 :2;
-        unsigned TX_EMPTY :1;
-        unsigned TX_FULL :1;
-        unsigned TX_REUSE :1;
-        unsigned reserved2 :1;
-    };
+        uint8_t RX_EMPTY :1;
+        uint8_t RX_FULL :1;
+        uint8_t reserved1 :2;
+        uint8_t TX_EMPTY :1;
+        uint8_t TX_FULL :1;
+        uint8_t TX_REUSE :1;
+        uint8_t reserved2 :1;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_fifo_status_t;
@@ -300,14 +302,14 @@ typedef union
 {
     struct
     {
-        unsigned DPL_P0 :1;
-        unsigned DPL_P1 :1;
-        unsigned DPL_P2 :1;
-        unsigned DPL_P3 :1;
-        unsigned DPL_P4 :1;
-        unsigned DPL_P5 :1;
-        unsigned reserved :2;
-    };
+        uint8_t DPL_P0 :1;
+        uint8_t DPL_P1 :1;
+        uint8_t DPL_P2 :1;
+        uint8_t DPL_P3 :1;
+        uint8_t DPL_P4 :1;
+        uint8_t DPL_P5 :1;
+        uint8_t reserved :2;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_dynpd_t;
@@ -316,11 +318,11 @@ typedef union
 {
     struct
     {
-        unsigned EN_DYN_ACK :1;
-        unsigned EN_ACK_PAY :1;
-        unsigned EN_DPL :1;
-        unsigned reserved :5;
-    };
+        uint8_t EN_DYN_ACK :1;
+        uint8_t EN_ACK_PAY :1;
+        uint8_t EN_DPL :1;
+        uint8_t reserved :5;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_feature_t;
@@ -329,9 +331,9 @@ typedef union
 {
     struct
     {
-        unsigned ARC_CTN :4;
-        unsigned PLOS_CNT :4;
-    };
+        uint8_t ARC_CTN :4;
+        uint8_t PLOS_CNT :4;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_observe_tx_t;
@@ -340,9 +342,9 @@ typedef union
 {
     struct
     {
-        unsigned RPD :1;
-        unsigned reserved :7;
-    };
+        uint8_t RPD :1;
+        uint8_t reserved :7;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_rpd_t;
@@ -351,24 +353,24 @@ typedef union
 {
     struct
     {
-        unsigned LNA_HCURR :1;
-        unsigned RF_PWR :2;
-        unsigned RF_DR :1;
-        unsigned PLL_LOCK :1;
-        unsigned reserved :3;
-    };
+        uint8_t LNA_HCURR :1;
+        uint8_t RF_PWR :2;
+        uint8_t RF_DR :1;
+        uint8_t PLL_LOCK :1;
+        uint8_t reserved :3;
+    } NRF24_PACKED;
 
     // New bit definitions for NRF24L01+
     struct
     {
-        unsigned P_obsolete :1;
-        unsigned P_RF_PWR :2;
-        unsigned P_RF_DR_HIGH :1;
-        unsigned P_PLL_LOCK :1;
-        unsigned P_RF_DR_LOW :1;
-        unsigned P_reserved :1;
-        unsigned P_CONT_WAVE :1;
-    };
+        uint8_t P_obsolete :1;
+        uint8_t P_RF_PWR :2;
+        uint8_t P_RF_DR_HIGH :1;
+        uint8_t P_PLL_LOCK :1;
+        uint8_t P_RF_DR_LOW :1;
+        uint8_t P_reserved :1;
+        uint8_t P_CONT_WAVE :1;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_rf_setup_t;
@@ -377,9 +379,9 @@ typedef union
 {
     struct
     {
-        unsigned ARC :4;
-        unsigned ARD :4;
-    };
+        uint8_t ARC :4;
+        uint8_t ARD :4;
+    } NRF24_PACKED;
 
     uint8_t value;
 } nrf24_setup_retr_t;
@@ -490,6 +492,14 @@ void nrf24_dump_status(nrf24_t* radio);
 void nrf24_dump_fifo_status(nrf24_t* radio);
 
 void nrf24_dump_observe_tx(nrf24_t* radio);
+
+#endif
+
+#ifdef NRF24_ENABLE_DEBUG_LOG
+
+const char* nrf24_reg_name(uint8_t reg);
+
+void nrf24_print_reg(uint8_t reg, uint8_t value);
 
 #endif
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Command.h"
+#include "FixedSizeRingBuffer.h"
 #include "Logger.h"
 #include "nrf24.h"
 #include "radio_protocol.h"
@@ -17,6 +18,7 @@ struct Message
 {
     using Payload = std::vector<uint8_t>;
 
+    Message() = default;
     Message(const Message&) = delete;
     Message(Message&&) = default;
 
@@ -29,9 +31,17 @@ struct Message
         , payload(std::move(payload))
     {}
 
-    const uint32_t number;
-    const std::string address;
-    const Payload payload;
+    Message(const Request& request)
+        : number(_nextNumber++)
+        , address(request.address)
+    {
+        payload.resize(sizeof request.msg);
+        memcpy(payload.data(), &request.msg, sizeof request.msg);
+    }
+
+    uint32_t number = 0;
+    std::string address;
+    Payload payload;
 
 private:
     static uint32_t _nextNumber;
@@ -61,8 +71,8 @@ private:
     nrf24_t m_nrf;
     uint8_t m_transceiverChannel = 0;
 
-    std::queue<Message> _transmitQueue;
-    std::queue<Message> _receiveQueue;
+    std::queue<Message, FixedSizeRingBuffer<Message, 5>> _transmitQueue;
+    std::queue<Message, FixedSizeRingBuffer<Message, 5>> _receiveQueue;
 
     void initTransceiver();
     void setTransceiverMode(const TransceiverMode mode, const std::string& txAddress = {});

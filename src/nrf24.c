@@ -26,7 +26,9 @@ uint8_t nrf24_read_register(nrf24_t* radio, uint8_t reg)
     radio->set_csn(NRF24_HIGH);
 
 #ifdef NRF24_ENABLE_DEBUG_LOG
-    printf("nrf24_read_register: %x = %x\r\n", reg, value);
+    printf("nrf24_read_register: %s -> ", nrf24_reg_name(reg));
+    nrf24_print_reg(reg, value);
+    printf("\r\n");
 #endif
 
     return value;
@@ -35,7 +37,9 @@ uint8_t nrf24_read_register(nrf24_t* radio, uint8_t reg)
 void nrf24_write_register(nrf24_t* radio, uint8_t reg, uint8_t value)
 {
 #ifdef NRF24_ENABLE_DEBUG_LOG
-    printf("nrf24_write_register: %x <- %x\r\n", reg, value);
+    printf("nrf24_write_register: %s <- ", nrf24_reg_name(reg));
+    nrf24_print_reg(reg, value);
+    printf("\r\n");
 #endif
 
     radio->set_csn(NRF24_LOW);
@@ -56,12 +60,28 @@ void nrf24_read_multi_byte_register(nrf24_t* radio, uint8_t reg, uint8_t* buf,
     for (uint8_t i = 0; i < len; ++i)
         buf[i] = radio->spi_exchange(NRF24_CMD_NOP);
 
+#ifdef NRF24_ENABLE_DEBUG_LOG
+    printf("nrf24_read_multi_byte_register: %s -> %d byte(s):", nrf24_reg_name(reg), len);
+    for (uint8_t i = 0; i < len; ++i) {
+        printf(" %02Xh", buf[i]);
+    }
+    printf("\r\n");
+#endif
+
     radio->set_csn(NRF24_HIGH);
 }
 
 void nrf24_write_multi_byte_register(nrf24_t* radio, uint8_t reg,
         const uint8_t* buf, uint8_t len)
 {
+#ifdef NRF24_ENABLE_DEBUG_LOG
+    printf("nrf24_write_multi_byte_register: %s <- %d byte(s):", nrf24_reg_name(reg), len);
+    for (uint8_t i = 0; i < len; ++i) {
+        printf(" %02Xh", buf[i]);
+    }
+    printf("\r\n");
+#endif
+
     radio->set_csn(NRF24_LOW);
 
     radio->spi_exchange(NRF24_CMD_W_REGISTER | (reg & NRF24_W_REGISTER_MASK));
@@ -273,6 +293,14 @@ void nrf24_write_tx_payload(nrf24_t* radio, const uint8_t* buf, uint8_t len)
     if (len > 32)
         len = 32;
 
+#ifdef NRF24_ENABLE_DEBUG_LOG
+    printf("nrf24_write_tx_payload: %u byte(s):", len);
+    for (uint8_t i = 0; i < len; ++i) {
+        printf(" %02Xh", buf[i]);
+    }
+    printf("\r\n");
+#endif
+
     radio->set_csn(NRF24_LOW);
 
     radio->spi_exchange(NRF24_CMD_W_TX_PAYLOAD);
@@ -296,6 +324,14 @@ void nrf24_read_rx_payload(nrf24_t* radio, uint8_t* buf, uint8_t len)
         buf[i] = radio->spi_exchange(NRF24_CMD_NOP);
 
     radio->set_csn(NRF24_HIGH);
+
+#ifdef NRF24_ENABLE_DEBUG_LOG
+    printf("nrf24_read_rx_payload: %u byte(s):", len);
+    for (uint8_t i = 0; i < len; ++i) {
+        printf(" %02Xh", buf[i]);
+    }
+    printf("\r\n");
+#endif
 }
 
 void nrf24_set_config(nrf24_t* radio, nrf24_config_t config)
@@ -685,6 +721,141 @@ void nrf24_dump_observe_tx(nrf24_t* radio)
     printf("OBSERVE TX: PLOS_CNT=%d ARC_CNT=%d\r\n",
             observe_tx.PLOS_CNT,
             observe_tx.ARC_CTN);
+}
+
+#endif
+
+#ifdef NRF24_ENABLE_DEBUG_LOG
+
+const char* nrf24_reg_name(uint8_t reg)
+{
+    switch (reg) {
+    case 0x00:
+        return "CONFIG";
+
+    case 0x01:
+        return "EN_AA";
+
+    case 0x02:
+        return "EN_RXADDR";
+
+    case 0x03:
+        return "SETUP_AW";
+
+    case 0x04:
+        return "SETUP_RETR";
+
+    case 0x05:
+        return "RF_CH";
+
+    case 0x06:
+        return "RF_SETUP";
+
+    case 0x07:
+        return "STATUS";
+
+    case 0x08:
+        return "OBSERVE_TX";
+
+    case 0x09:
+        return "RPD";
+
+    case 0x0A:
+        return "RX_ADDR_P0";
+
+    case 0x0B:
+        return "RX_ADDR_P1";
+
+    case 0x0C:
+        return "RX_ADDR_P2";
+
+    case 0x0D:
+        return "RX_ADDR_P3";
+
+    case 0x0E:
+        return "RX_ADDR_P4";
+
+    case 0x0F:
+        return "RX_ADDR_P5";
+
+    case 0x10:
+        return "TX_ADDR";
+
+    case 0x11:
+        return "RX_PW_P0";
+
+    case 0x12:
+        return "RX_PW_P1";
+
+    case 0x13:
+        return "RX_PW_P2";
+
+    case 0x14:
+        return "RX_PW_P3";
+
+    case 0x15:
+        return "RX_PW_P4";
+
+    case 0x16:
+        return "RX_PW_P5";
+
+    case 0x17:
+        return "FIFO_STATUS";
+
+    case 0x1C:
+        return "DYNPD";
+
+    case 0x1D:
+        return "FEATURE";
+
+    default: {
+        static char s[4] = { 0 };
+        sprintf(s, "%02Xh", reg);
+        return s;
+    }
+    }
+
+    return "N/A";
+}
+
+void nrf24_print_reg(uint8_t reg, uint8_t value)
+{
+    switch (reg) {
+    case NRF24_REG_CONFIG: {
+        nrf24_config_t r;
+        r.value = value;
+        printf("MASK_RX_DR=%u,MASK_TX_DS=%u,MASK_MAX_RT=%u,EN_CRC=%u,CRCO=%u,PWR_UP=%u,PRIM_RX=%u",
+                r.MASK_RX_DR, r.MASK_TX_DS, r.MASK_MAX_RT, r.EN_CRC, r.CRCO, r.PWR_UP, r.PRIM_RX);
+        break;
+    }
+
+    case NRF24_REG_STATUS: {
+        nrf24_status_t r;
+        r.value = value;
+        printf("RX_DR=%u,TX_DS=%u,MAX_RT=%u,RX_P_NO=%u,TX_FULL=%u",
+                r.RX_DR, r.TX_DS, r.MAX_RT, r.RX_P_NO, r.TX_FULL);
+        break;
+    }
+
+    case NRF24_REG_RF_CH: {
+        nrf24_rf_ch_t r;
+        r.value = value;
+        printf("RF_CH=%u", r.RF_CH);
+        break;
+    }
+
+    case NRF24_REG_FIFO_STATUS: {
+        nrf24_fifo_status_t r;
+        r.value = value;
+        printf("TX_REUSE=%u,TX_FULL=%u,TX_EMPTY=%u,RX_FULL=%u,RX_EMPTY=%u",
+                r.TX_REUSE, r.TX_FULL, r.TX_EMPTY, r.RX_FULL, r.RX_EMPTY);
+        break;
+    }
+
+    default:
+        printf("%02Xh", value);
+        break;
+    }
 }
 
 #endif

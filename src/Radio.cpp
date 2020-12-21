@@ -28,9 +28,10 @@ static const uint8_t ReceiveAddress[] = { 'S', 'M', 'R', 'H', '1' };
 
 namespace Pins
 {
+    // SPI pins are: SCK=D5, MISO=D6, MOSI=D7
+    static constexpr auto NrfIrq = D0;
     static constexpr auto NrfCe = D1;
-    static constexpr auto NrfCsn = D8;
-    static constexpr auto NrfIrq = D3;
+    static constexpr auto NrfCsn = D2;
 }
 
 Radio::Radio(uint8_t transceiverChannel)
@@ -38,6 +39,7 @@ Radio::Radio(uint8_t transceiverChannel)
 {
     _log.info("initializing");
 
+    SPI.begin();
     initTransceiver();
 }
 
@@ -215,23 +217,23 @@ void Radio::runStateMachine()
                     nrf24_power_up(&m_nrf);
 
                     _state = State::Idle;
-
-                    break;
                 }
 
-                const auto status = nrf24_get_status(&m_nrf);
-
-                if (status.TX_DS) {
-                    _log.debug("message sent");
-                } else if (status.MAX_RT) {
-                    _log.debug("maximum transmit retry count reached");
-                }
-
-                setTransceiverMode(TransceiverMode::PrimaryReceiver);
-                nrf24_power_up(&m_nrf);
-
-                _state = State::Idle;
+                break;
             }
+
+            const auto status = nrf24_get_status(&m_nrf);
+
+            if (status.TX_DS) {
+                _log.debug("message sent");
+            } else if (status.MAX_RT) {
+                _log.debug("maximum transmit retry count reached");
+            }
+
+            setTransceiverMode(TransceiverMode::PrimaryReceiver);
+            nrf24_power_up(&m_nrf);
+
+            _state = State::Idle;
 
             break;
         }

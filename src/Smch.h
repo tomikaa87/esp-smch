@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blynk.h"
+#include "Command.h"
 #include "DeviceHub.h"
 #include "Radio.h"
 
@@ -20,5 +22,8 @@ private:
     const ApplicationConfig& _appConfig;
     const Logger _log{ "Smch" };
     radio::Radio _radio;
-    DeviceHub _deviceHub;
+    // DeviceHub _deviceHub;
+    Blynk _blynk;
+
+    void sendRemoteControlCommand(uint8_t deviceIndex, radio::Command command);
 };
