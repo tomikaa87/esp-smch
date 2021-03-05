@@ -41,3 +41,7 @@
 .vscode/ipch
 
 src/PrivateConfig.h
+
+*.kicad_pcb-bak
+
+*.sch-bak
