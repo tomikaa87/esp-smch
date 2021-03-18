@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name nrf24l01p_pa_lna_breakout)(type Legacy)(uri ${KIPRJMOD}/nrf24l01p_pa_lna_breakout.lib)(options "")(descr ""))
+)

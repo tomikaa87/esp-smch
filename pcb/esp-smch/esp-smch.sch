@@ -25,12 +25,12 @@ F 3 "https://wiki.wemos.cc/products:d1:d1_mini#documentation" H 3900 2300 50  00
 	1    0    0    -1  
 $EndComp
 $Comp
-L RF:NRF24L01_Breakout U2
+L nrf24l01p_pa_lna_breakout:NRF24L01P_PA_LNA_Breakout U2
 U 1 1 60425BA8
 P 8700 3350
 F 0 "U2" H 9080 3396 50  0000 L CNN
 F 1 "NRF24L01_Breakout" H 9080 3305 50  0000 L CNN
-F 2 "RF_Module:nRF24L01_Breakout" H 8850 3950 50  0001 L CIN
+F 2 "RF_Module:NRF24L01P_PA_LNA_Breakout" H 8850 3950 50  0001 L CIN
 F 3 "http://www.nordicsemi.com/eng/content/download/2730/34105/file/nRF24L01_Product_Specification_v2_0.pdf" H 8700 3250 50  0001 C CNN
 	1    8700 3350
 	1    0    0    -1  
@@ -136,7 +136,7 @@ Wire Wire Line
 Wire Wire Line
 	8700 3950 8700 4150
 $Comp
-L Device:C_Polarized C2
+L Device:CP C2
 U 1 1 6042D4EC
 P 4500 3450
 F 0 "C2" H 4618 3496 50  0000 L CNN
