@@ -30,7 +30,7 @@ U 1 1 60425BA8
 P 8700 3350
 F 0 "U2" H 9080 3396 50  0000 L CNN
 F 1 "NRF24L01_Breakout" H 9080 3305 50  0000 L CNN
-F 2 "RF_Module:NRF24L01P_PA_LNA_Breakout" H 8850 3950 50  0001 L CIN
+F 2 "esp-smch:NRF24L01P_PA_LNA_Breakout" H 8850 3950 50  0001 L CIN
 F 3 "http://www.nordicsemi.com/eng/content/download/2730/34105/file/nRF24L01_Product_Specification_v2_0.pdf" H 8700 3250 50  0001 C CNN
 	1    8700 3350
 	1    0    0    -1  
@@ -242,4 +242,41 @@ F 3 "~" H 7300 2600 50  0001 C CNN
 	1    7300 2600
 	1    0    0    -1  
 $EndComp
+$Comp
+L Device:C C3
+U 1 1 60563587
+P 3450 3450
+F 0 "C3" H 3565 3496 50  0000 L CNN
+F 1 "100n" H 3565 3405 50  0000 L CNN
+F 2 "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm" H 3488 3300 50  0001 C CNN
+F 3 "~" H 3450 3450 50  0001 C CNN
+	1    3450 3450
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3V3 #PWR?
+U 1 1 6056358D
+P 3450 3200
+F 0 "#PWR?" H 3450 3050 50  0001 C CNN
+F 1 "+3V3" H 3465 3373 50  0000 C CNN
+F 2 "" H 3450 3200 50  0001 C CNN
+F 3 "" H 3450 3200 50  0001 C CNN
+	1    3450 3200
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 60563593
+P 3450 3700
+F 0 "#PWR?" H 3450 3450 50  0001 C CNN
+F 1 "GND" H 3455 3527 50  0000 C CNN
+F 2 "" H 3450 3700 50  0001 C CNN
+F 3 "" H 3450 3700 50  0001 C CNN
+	1    3450 3700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3450 3200 3450 3300
+Wire Wire Line
+	3450 3600 3450 3700
 $EndSCHEMATC
