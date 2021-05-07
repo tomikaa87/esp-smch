@@ -26,6 +26,17 @@ void Smch::task()
     _radio.task();
     _webApi.task();
     // _deviceHub.task();
+
+    if (!_commandQueue.empty()) {
+        if (millis() - _lastQueuedExecTimestamp >= 200) {
+            const auto p = _commandQueue.front();
+            _commandQueue.pop();
+
+            sendRemoteControlCommand(p.first, p.second);
+
+            _lastQueuedExecTimestamp = millis();
+        }
+    }
 }
 
 void Smch::sendRemoteControlCommand(const uint8_t deviceIndex, const radio::Command command)
@@ -47,7 +58,26 @@ void Smch::handleWebApiCommand(WebApi::Command command, const uint8_t subDeviceI
     _log.debug("handleWebApiCommand: command=%s, subDeviceIndex=%u", toString(command), subDeviceIndex);
 
     if (subDeviceIndex == 255) {
+        if (!_commandQueue.empty()) {
+            _log.warning("handleWebApiCommand: command queue is not empty");
+            return;
+        }
 
+        constexpr auto MaxDeviceIndex = 4;
+
+        switch (command) {
+            case WebApi::Command::ShutterUp:
+                for (uint8_t i = 0; i <= MaxDeviceIndex; ++i) {
+                    _commandQueue.emplace(std::make_pair(i, radio::Command::AllUp));
+                }
+                break;
+
+            case WebApi::Command::ShutterDown:
+                for (uint8_t i = 0; i <= MaxDeviceIndex; ++i) {
+                    _commandQueue.emplace(std::make_pair(i, radio::Command::AllDown));
+                }
+                break;
+        }
     } else if (subDeviceIndex < 10 * 2) {
         const auto deviceIndex = subDeviceIndex >> 1;
 

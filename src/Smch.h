@@ -10,6 +10,8 @@
 #include <Logger.h>
 
 #include <cstdint>
+#include <queue>
+#include <utility>
 
 class Smch
 {
@@ -26,6 +28,8 @@ private:
     // DeviceHub _deviceHub;
     Blynk _blynk;
     WebApi _webApi;
+    std::queue<std::pair<uint8_t, radio::Command>> _commandQueue;
+    uint32_t _lastQueuedExecTimestamp = 0;
 
     void sendRemoteControlCommand(uint8_t deviceIndex, radio::Command command);
     void handleWebApiCommand(WebApi::Command command, uint8_t subDeviceIndex);
