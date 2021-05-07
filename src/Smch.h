@@ -4,6 +4,7 @@
 #include "Command.h"
 #include "DeviceHub.h"
 #include "Radio.h"
+#include "WebApi.h"
 
 #include <CoreApplication.h>
 #include <Logger.h>
@@ -24,6 +25,8 @@ private:
     radio::Radio _radio;
     // DeviceHub _deviceHub;
     Blynk _blynk;
+    WebApi _webApi;
 
     void sendRemoteControlCommand(uint8_t deviceIndex, radio::Command command);
+    void handleWebApiCommand(WebApi::Command command, uint8_t subDeviceIndex);
 };
