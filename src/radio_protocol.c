@@ -119,7 +119,7 @@ void print_protocol_message(const protocol_msg_t* msg)
 	}
 
 	case PROTO_MSG_READ_TEMPERATURE_RESULT:
-		printf("    Temperature: %ld\r\n", msg->payload.temp.temperature);
+		printf("    Temperature: %d\r\n", msg->payload.temp.temperature);
 		break;
 
 	case PROTO_MSG_RESULT:
