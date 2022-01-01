@@ -1,4 +1,3 @@
-#include "PrivateConfig.h"
 #include "Smch.h"
 #include "Utils.h"
 
@@ -8,6 +7,7 @@ Smch::Smch(const ApplicationConfig& appConfig)
     , _radio(0)
     // , _deviceHub(_radio)
     , _blynk(_coreApplication.blynkHandler())
+    , _mqtt(_coreApplication.mqttClient())
 {
     Logger::setup(_appConfig, _coreApplication.systemClock());
 
@@ -18,6 +18,9 @@ Smch::Smch(const ApplicationConfig& appConfig)
     _webApi.setCommandHandler([this](const WebApi::Command command, const uint8_t deviceIndex) {
         handleWebApiCommand(command, deviceIndex);
     });
+
+    setupMqtt();
+    _coreApplication.setMqttUpdateHandler([this]{ updateMqtt(); });
 }
 
 void Smch::task()
@@ -97,4 +100,44 @@ void Smch::handleWebApiCommand(WebApi::Command command, const uint8_t subDeviceI
                 break;
         }
     }
+}
+
+
+void Smch::setupMqtt()
+{
+    for (unsigned i = 0; i < _mqtt.shutters.size(); ++i) {
+        _mqtt.shutters[i] = 0;
+
+        // Order of these must match the order of the MQTT variables
+        static const std::vector<std::pair<int, radio::Command>> OpenCommands{
+            { 0, radio::Command::Shutter1Up },      // Living Room Left Door
+            { 2, radio::Command::Shutter1Up },      // Living Room Left Window
+            { 1, radio::Command::Shutter2Up },      // Living Room Right Window
+            { 1, radio::Command::Shutter1Up },      // Living Room Right Door
+            { 4, radio::Command::Shutter1Up },      // Kitchen Door
+            { 4, radio::Command::Shutter2Up },      // Kitchen Left Window
+            { 3, radio::Command::Shutter1Up },      // Kitchen Right Window
+        };
+
+        static const std::vector<std::pair<int, radio::Command>> CloseCommands{
+            { 0, radio::Command::Shutter1Down },    // Living Room Left Door
+            { 2, radio::Command::Shutter1Down },    // Living Room Left Window
+            { 1, radio::Command::Shutter2Down },    // Living Room Right Window
+            { 1, radio::Command::Shutter1Down },    // Living Room Right Door
+            { 4, radio::Command::Shutter1Down },    // Kitchen Door
+            { 4, radio::Command::Shutter2Down },    // Kitchen Left Window
+            { 3, radio::Command::Shutter1Down },    // Kitchen Right Window
+        };
+
+        _mqtt.shutters[i].setChangedHandler([this, i](const int v) {
+            const auto& command = v > 0 ? OpenCommands[i] : CloseCommands[i];
+            _commandQueue.emplace(command);
+        });
+    }
+
+    updateMqtt();
+}
+
+void Smch::updateMqtt()
+{
 }
