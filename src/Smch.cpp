@@ -1,19 +1,25 @@
 #include "Smch.h"
 #include "Utils.h"
 
+#include <sstream>
+
 Smch::Smch(const ApplicationConfig& appConfig)
     : _coreApplication(appConfig)
     , _appConfig(appConfig)
     , _radio(0)
     // , _deviceHub(_radio)
+#ifdef IOT_ENABLE_BLYNK
     , _blynk(_coreApplication.blynkHandler())
+#endif
     , _mqtt(_coreApplication.mqttClient())
 {
     Logger::setup(_appConfig, _coreApplication.systemClock());
 
+#ifdef IOT_ENABLE_BLYNK
     _blynk.setCommandHandler([this](const uint8_t deviceIndex, const radio::Command command) {
         sendRemoteControlCommand(deviceIndex, command);
     });
+#endif
 
     _webApi.setCommandHandler([this](const WebApi::Command command, const uint8_t deviceIndex) {
         handleWebApiCommand(command, deviceIndex);
@@ -102,37 +108,80 @@ void Smch::handleWebApiCommand(WebApi::Command command, const uint8_t subDeviceI
     }
 }
 
-
 void Smch::setupMqtt()
 {
     for (unsigned i = 0; i < _mqtt.shutters.size(); ++i) {
         _mqtt.shutters[i] = 0;
 
         // Order of these must match the order of the MQTT variables
-        static const std::vector<std::pair<int, radio::Command>> OpenCommands{
-            { 0, radio::Command::Shutter1Up },      // Living Room Left Door
-            { 2, radio::Command::Shutter1Up },      // Living Room Left Window
-            { 1, radio::Command::Shutter2Up },      // Living Room Right Window
-            { 1, radio::Command::Shutter1Up },      // Living Room Right Door
-            { 4, radio::Command::Shutter1Up },      // Kitchen Door
-            { 4, radio::Command::Shutter2Up },      // Kitchen Left Window
-            { 3, radio::Command::Shutter1Up },      // Kitchen Right Window
+        static constexpr std::array<std::pair<int, radio::Command>, 7> OpenCommands{
+            std::pair<int, radio::Command>{ 0, radio::Command::Shutter1Up },      // Living Room Left Door
+            std::pair<int, radio::Command>{ 2, radio::Command::Shutter1Up },      // Living Room Left Window
+            std::pair<int, radio::Command>{ 1, radio::Command::Shutter2Up },      // Living Room Right Window
+            std::pair<int, radio::Command>{ 1, radio::Command::Shutter1Up },      // Living Room Right Door
+            std::pair<int, radio::Command>{ 4, radio::Command::Shutter1Up },      // Kitchen Door
+            std::pair<int, radio::Command>{ 4, radio::Command::Shutter2Up },      // Kitchen Left Window
+            std::pair<int, radio::Command>{ 3, radio::Command::Shutter1Up },      // Kitchen Right Window
         };
 
-        static const std::vector<std::pair<int, radio::Command>> CloseCommands{
-            { 0, radio::Command::Shutter1Down },    // Living Room Left Door
-            { 2, radio::Command::Shutter1Down },    // Living Room Left Window
-            { 1, radio::Command::Shutter2Down },    // Living Room Right Window
-            { 1, radio::Command::Shutter1Down },    // Living Room Right Door
-            { 4, radio::Command::Shutter1Down },    // Kitchen Door
-            { 4, radio::Command::Shutter2Down },    // Kitchen Left Window
-            { 3, radio::Command::Shutter1Down },    // Kitchen Right Window
+        static constexpr std::array<std::pair<int, radio::Command>, 7> CloseCommands{
+            std::pair<int, radio::Command>{ 0, radio::Command::Shutter1Down },    // Living Room Left Door
+            std::pair<int, radio::Command>{ 2, radio::Command::Shutter1Down },    // Living Room Left Window
+            std::pair<int, radio::Command>{ 1, radio::Command::Shutter2Down },    // Living Room Right Window
+            std::pair<int, radio::Command>{ 1, radio::Command::Shutter1Down },    // Living Room Right Door
+            std::pair<int, radio::Command>{ 4, radio::Command::Shutter1Down },    // Kitchen Door
+            std::pair<int, radio::Command>{ 4, radio::Command::Shutter2Down },    // Kitchen Left Window
+            std::pair<int, radio::Command>{ 3, radio::Command::Shutter1Down },    // Kitchen Right Window
         };
 
         _mqtt.shutters[i].setChangedHandler([this, i](const int v) {
             const auto& command = v > 0 ? OpenCommands[i] : CloseCommands[i];
             _commandQueue.emplace(command);
         });
+
+        const auto makeButtonConfig = [](
+            const bool open,
+            PGM_P name,
+            PGM_P buttonId,
+            PGM_P commandTopic
+        ) {
+            std::stringstream config;
+
+            config << '{';
+            config << R"("icon":)" << (open ? R"("mdi:window-shutter-open")" : R"("mdi:window-shutter")");
+            config << R"(,"name":")" << Utils::pgmToStdString(name) << (open ? " Open" : " Close") << '"';
+            config << R"(,"object_id":"smch_)" << Utils::pgmToStdString(buttonId) << (open ? "_open" : "_close") << '"';
+            config << R"(,"unique_id":"smch_)" << Utils::pgmToStdString(buttonId) << (open ? "_open" : "_close") << '"';
+            config << R"(,"command_topic":")" << Utils::pgmToStdString(commandTopic) << '"';
+            config << R"(,"payload_press":")" << (open ? "1" : "0") << '"';
+            config << '}';
+
+            return config.str();
+        };
+
+        static const std::array<std::tuple<PGM_P, PGM_P, PGM_P>, 7> CommandButtons{
+            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Left Door"), PSTR("livingroom_leftdoor"), PSTR("home/shutters/livingroom/leftdoor/state/set") },
+            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Left Window"), PSTR("livingroom_leftwindow"), PSTR("home/shutters/livingroom/leftwindow/state/set") },
+            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Right Window"), PSTR("livingroom_rightwindow"), PSTR("home/shutters/livingroom/rightwindow/state/set") },
+            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Right Door"), PSTR("livingroom_rightdoor"), PSTR("home/shutters/livingroom/rightdoor/state/set") },
+            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Kitchen Door"), PSTR("kitchen_door"), PSTR("home/shutters/kitchen/door/state/set") },
+            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Kitchen Left Window"), PSTR("kitchen_leftwindow"), PSTR("home/shutters/kitchen/leftwindow/state/set") },
+            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Kitchen Right Window"), PSTR("kitchen_rightwindow"), PSTR("home/shutters/kitchen/rightwindow/state/set") }
+        };
+
+        _mqtt.closeButtonConfigs[i] = makeButtonConfig(
+            false,
+            std::get<0>(CommandButtons[i]),
+            std::get<1>(CommandButtons[i]),
+            std::get<2>(CommandButtons[i])
+        );
+
+        _mqtt.openButtonConfigs[i] = makeButtonConfig(
+            true,
+            std::get<0>(CommandButtons[i]),
+            std::get<1>(CommandButtons[i]),
+            std::get<2>(CommandButtons[i])
+        );
     }
 
     updateMqtt();

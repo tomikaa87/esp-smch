@@ -2,6 +2,7 @@
 #include "Request.h"
 #include "Utils.h"
 
+#include <cstring>
 #include <string>
 
 namespace radio
@@ -68,4 +69,12 @@ std::string deviceIndexToAddress(const uint8_t index)
     return s;
 }
 
+}
+
+std::string Utils::pgmToStdString(PGM_P str)
+{
+    const auto len = strlen_P(str);
+    std::string ss(len, 0);
+    memcpy_P(&ss[0], str, len);
+    return ss;
 }

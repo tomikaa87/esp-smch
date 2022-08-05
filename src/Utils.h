@@ -8,10 +8,13 @@
 
 namespace radio
 {
+    Request createStatusRequest(const std::string& address);
+    Request createCommandRequest(Command command, const std::string& address);
+    protocol_cmd_t commandToProtocolCmd(Command command);
+    std::string deviceIndexToAddress(uint8_t index);
+}
 
-Request createStatusRequest(const std::string& address);
-Request createCommandRequest(Command command, const std::string& address);
-protocol_cmd_t commandToProtocolCmd(Command command);
-std::string deviceIndexToAddress(uint8_t index);
-
+namespace Utils
+{
+    std::string pgmToStdString(PGM_P str);
 }
