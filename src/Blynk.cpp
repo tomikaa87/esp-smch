@@ -1,3 +1,5 @@
+#ifdef IOT_ENABLE_BLYNK
+
 #include "Blynk.h"
 
 #include <IBlynkHandler.h>
@@ -86,3 +88,5 @@ void Blynk::Blynk::setupHandlers()
         }
     });
 }
+
+#endif

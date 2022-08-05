@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef IOT_ENABLE_BLYNK
+
 #include "Command.h"
 
 #include <Logger.h>
@@ -25,3 +27,5 @@ private:
 
     void setupHandlers();
 };
+
+#endif
