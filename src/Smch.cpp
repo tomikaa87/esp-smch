@@ -138,49 +138,79 @@ void Smch::setupMqtt()
             const auto& command = v > 0 ? OpenCommands[i] : CloseCommands[i];
             _commandQueue.emplace(command);
         });
+    }
 
-        const auto makeButtonConfig = [](
-            const bool open,
-            PGM_P name,
-            PGM_P buttonId,
-            PGM_P commandTopic
-        ) {
-            std::stringstream config;
+    const auto makeButtonConfig = [](
+        const bool open,
+        PGM_P name,
+        PGM_P buttonId,
+        PGM_P commandTopic
+    ) {
+        std::stringstream config;
 
-            config << '{';
-            config << R"("icon":)" << (open ? R"("mdi:window-shutter-open")" : R"("mdi:window-shutter")");
-            config << R"(,"name":")" << Utils::pgmToStdString(name) << (open ? " Open" : " Close") << '"';
-            config << R"(,"object_id":"smch_)" << Utils::pgmToStdString(buttonId) << (open ? "_open" : "_close") << '"';
-            config << R"(,"unique_id":"smch_)" << Utils::pgmToStdString(buttonId) << (open ? "_open" : "_close") << '"';
-            config << R"(,"command_topic":")" << Utils::pgmToStdString(commandTopic) << '"';
-            config << R"(,"payload_press":")" << (open ? "1" : "0") << '"';
-            config << '}';
+        config << '{';
+        config << R"("icon":)" << (open ? R"("mdi:window-shutter-open")" : R"("mdi:window-shutter")");
+        config << R"(,"name":")" << Utils::pgmToStdString(name) << (open ? " Open" : " Close") << '"';
+        config << R"(,"object_id":"smch_)" << Utils::pgmToStdString(buttonId) << (open ? "_open" : "_close") << '"';
+        config << R"(,"unique_id":"smch_)" << Utils::pgmToStdString(buttonId) << (open ? "_open" : "_close") << '"';
+        config << R"(,"command_topic":")" << Utils::pgmToStdString(commandTopic) << '"';
+        config << R"(,"payload_press":")" << (open ? "1" : "0") << '"';
+        config << '}';
 
-            return config.str();
-        };
+        return config.str();
+    };
 
-        static const std::array<std::tuple<PGM_P, PGM_P, PGM_P>, 7> CommandButtons{
-            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Left Door"), PSTR("livingroom_leftdoor"), PSTR("home/shutters/livingroom/leftdoor/state/set") },
-            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Left Window"), PSTR("livingroom_leftwindow"), PSTR("home/shutters/livingroom/leftwindow/state/set") },
-            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Right Window"), PSTR("livingroom_rightwindow"), PSTR("home/shutters/livingroom/rightwindow/state/set") },
-            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Right Door"), PSTR("livingroom_rightdoor"), PSTR("home/shutters/livingroom/rightdoor/state/set") },
-            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Kitchen Door"), PSTR("kitchen_door"), PSTR("home/shutters/kitchen/door/state/set") },
-            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Kitchen Left Window"), PSTR("kitchen_leftwindow"), PSTR("home/shutters/kitchen/leftwindow/state/set") },
-            std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Kitchen Right Window"), PSTR("kitchen_rightwindow"), PSTR("home/shutters/kitchen/rightwindow/state/set") }
-        };
+    static const std::array<PGM_P, 7> OpenButtonConfigTopics{
+        PSTR("homeassistant/button/smch_livingroom_leftdoor_open/config"),
+        PSTR("homeassistant/button/smch_livingroom_leftwindow_open/config"),
+        PSTR("homeassistant/button/smch_livingroom_rightwindow_open/config"),
+        PSTR("homeassistant/button/smch_livingroom_rightdoor_open/config"),
+        PSTR("homeassistant/button/smch_kitchen_door_open/config"),
+        PSTR("homeassistant/button/smch_kitchen_leftwindow_open/config"),
+        PSTR("homeassistant/button/smch_kitchen_rightwindow_open/config")
+    };
 
-        _mqtt.closeButtonConfigs[i] = makeButtonConfig(
-            false,
-            std::get<0>(CommandButtons[i]),
-            std::get<1>(CommandButtons[i]),
-            std::get<2>(CommandButtons[i])
+    static const std::array<PGM_P, 7> CloseButtonConfigTopics{
+        PSTR("homeassistant/button/smch_livingroom_leftdoor_close/config"),
+        PSTR("homeassistant/button/smch_livingroom_leftwindow_close/config"),
+        PSTR("homeassistant/button/smch_livingroom_rightwindow_close/config"),
+        PSTR("homeassistant/button/smch_livingroom_rightdoor_close/config"),
+        PSTR("homeassistant/button/smch_kitchen_door_close/config"),
+        PSTR("homeassistant/button/smch_kitchen_leftwindow_close/config"),
+        PSTR("homeassistant/button/smch_kitchen_rightwindow_close/config")
+    };
+
+    static const std::array<std::tuple<PGM_P, PGM_P, PGM_P>, 7> CommandButtons{
+        std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Left Door"), PSTR("livingroom_leftdoor"), PSTR("home/shutters/livingroom/leftdoor/state/set") },
+        std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Left Window"), PSTR("livingroom_leftwindow"), PSTR("home/shutters/livingroom/leftwindow/state/set") },
+        std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Right Window"), PSTR("livingroom_rightwindow"), PSTR("home/shutters/livingroom/rightwindow/state/set") },
+        std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Living Room Right Door"), PSTR("livingroom_rightdoor"), PSTR("home/shutters/livingroom/rightdoor/state/set") },
+        std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Kitchen Door"), PSTR("kitchen_door"), PSTR("home/shutters/kitchen/door/state/set") },
+        std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Kitchen Left Window"), PSTR("kitchen_leftwindow"), PSTR("home/shutters/kitchen/leftwindow/state/set") },
+        std::tuple<PGM_P, PGM_P, PGM_P>{ PSTR("Kitchen Right Window"), PSTR("kitchen_rightwindow"), PSTR("home/shutters/kitchen/rightwindow/state/set") }
+    };
+
+    for (auto i = 0u; i < CommandButtons.size(); ++i) {
+        _coreApplication.mqttClient().publish(
+            OpenButtonConfigTopics[i],
+            makeButtonConfig(
+                true,
+                std::get<0>(CommandButtons[i]),
+                std::get<1>(CommandButtons[i]),
+                std::get<2>(CommandButtons[i])
+            ),
+            false
         );
 
-        _mqtt.openButtonConfigs[i] = makeButtonConfig(
-            true,
-            std::get<0>(CommandButtons[i]),
-            std::get<1>(CommandButtons[i]),
-            std::get<2>(CommandButtons[i])
+        _coreApplication.mqttClient().publish(
+            CloseButtonConfigTopics[i],
+            makeButtonConfig(
+                false,
+                std::get<0>(CommandButtons[i]),
+                std::get<1>(CommandButtons[i]),
+                std::get<2>(CommandButtons[i])
+            ),
+            false
         );
     }
 

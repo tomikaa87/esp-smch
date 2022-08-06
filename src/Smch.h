@@ -46,29 +46,9 @@ private:
                 MqttVariable<int>{ PSTR("home/shutters/kitchen/leftwindow/state/get"), PSTR("home/shutters/kitchen/leftwindow/state/set"), mqttClient },
                 MqttVariable<int>{ PSTR("home/shutters/kitchen/rightwindow/state/get"), PSTR("home/shutters/kitchen/rightwindow/state/set"), mqttClient }
             }
-            , openButtonConfigs{
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_livingroom_leftdoor_open/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_livingroom_leftwindow_open/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_livingroom_rightwindow_open/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_livingroom_rightdoor_open/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_kitchen_door_open/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_kitchen_leftwindow_open/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_kitchen_rightwindow_open/config"), mqttClient },
-            }
-            , closeButtonConfigs{
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_livingroom_leftdoor_close/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_livingroom_leftwindow_close/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_livingroom_rightwindow_close/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_livingroom_rightdoor_close/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_kitchen_door_close/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_kitchen_leftwindow_close/config"), mqttClient },
-                MqttVariable<std::string>{ PSTR("homeassistant/button/smch_kitchen_rightwindow_close/config"), mqttClient },
-            }
         {}
 
         std::array<MqttVariable<int>, 7> shutters;
-        std::array<MqttVariable<std::string>, 7> openButtonConfigs;
-        std::array<MqttVariable<std::string>, 7> closeButtonConfigs;
     } _mqtt;
 
     void setupMqtt();
