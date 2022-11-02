@@ -37,7 +37,7 @@ namespace Pins
 Radio::Radio(uint8_t transceiverChannel)
     : m_transceiverChannel(transceiverChannel)
 {
-    _log.info("initializing");
+    _log.info_P(PSTR("initializing"));
 
     SPI.begin();
     initTransceiver();
@@ -50,7 +50,7 @@ bool Radio::sendMessage(Message&& message)
 
     _transmitQueue.push(std::move(message));
 
-    _log.debug("pending messages in transmit queue: %lu", _transmitQueue.size());
+    _log.debug_P(PSTR("pending messages in transmit queue: %lu"), _transmitQueue.size());
 
     return true;
 }
@@ -78,7 +78,7 @@ void Radio::task()
 
 void Radio::initTransceiver()
 {
-    _log.debug("initializing transceiver, channel: %u", m_transceiverChannel);
+    _log.debug_P(PSTR("initializing transceiver, channel: %u"), m_transceiverChannel);
 
     pinMode(Pins::NrfCe, OUTPUT);
     pinMode(Pins::NrfCsn, OUTPUT);
@@ -128,10 +128,10 @@ void Radio::initTransceiver()
 
 void Radio::setTransceiverMode(const TransceiverMode mode, const std::string& txAddress)
 {
-    _log.debug("setting mode to %s", mode == TransceiverMode::PrimaryReceiver ? "PRX" : "PTX");
+    _log.debug_P(PSTR("setting mode to %s"), mode == TransceiverMode::PrimaryReceiver ? "PRX" : "PTX");
 
     if (!txAddress.empty())
-        _log.debug("transmit address: %s, length: %d", txAddress.c_str(),  txAddress.size());
+        _log.debug_P(PSTR("transmit address: %s, length: %d"), txAddress.c_str(),  txAddress.size());
 
     nrf24_power_down(&m_nrf);
 
@@ -179,14 +179,14 @@ void Radio::runStateMachine()
                 const auto status = nrf24_get_status(&m_nrf);
 
                 if (status.RX_DR) {
-                    _log.debug("message received");
+                    _log.debug_P(PSTR("message received"));
                     _state = State::ReadReceivedMessages;
                     break;
                 }
             }
 
             if (!_transmitQueue.empty()) {
-                _log.debug("sending next message from transmit queue");
+                _log.debug_P(PSTR("sending next message from transmit queue"));
                 _state = State::SendNextQueuedMessage;
             }
 
@@ -196,7 +196,7 @@ void Radio::runStateMachine()
         case State::SendNextQueuedMessage: {
             const auto message = std::move(_transmitQueue.front());
             _transmitQueue.pop();
-            _log.debug("remaining messages in transmit queue: %lu", _transmitQueue.size());
+            _log.debug_P(PSTR("remaining messages in transmit queue: %lu"), _transmitQueue.size());
 
             setTransceiverMode(TransceiverMode::PrimaryTransmitter, message.address);
             nrf24_write_tx_payload(&m_nrf, message.payload.data(), message.payload.size());
@@ -211,7 +211,7 @@ void Radio::runStateMachine()
         case State::WaitForMessageSent: {
             if (!isInterruptTriggered()) {
                 if (millis() - _timer >= MessageSendTimeoutMs) {
-                    _log.error("message sending timed out");
+                    _log.error_P(PSTR("message sending timed out"));
 
                     setTransceiverMode(TransceiverMode::PrimaryReceiver);
                     nrf24_power_up(&m_nrf);
@@ -225,9 +225,9 @@ void Radio::runStateMachine()
             const auto status = nrf24_get_status(&m_nrf);
 
             if (status.TX_DS) {
-                _log.debug("message sent");
+                _log.debug_P(PSTR("message sent"));
             } else if (status.MAX_RT) {
-                _log.debug("maximum transmit retry count reached");
+                _log.debug_P(PSTR("maximum transmit retry count reached"));
             }
 
             setTransceiverMode(TransceiverMode::PrimaryReceiver);
@@ -239,7 +239,7 @@ void Radio::runStateMachine()
         }
 
         case State::ReadReceivedMessages: {
-            _log.debug("reading received messages");
+            _log.debug_P(PSTR("reading received messages"));
 
             nrf24_power_down(&m_nrf);
             nrf24_clear_interrupts(&m_nrf);
@@ -263,7 +263,7 @@ void Radio::runStateMachine()
 
             nrf24_power_up(&m_nrf);
 
-            _log.debug("pending received messages: %lu", _receiveQueue.size());
+            _log.debug_P(PSTR("pending received messages: %lu"), _receiveQueue.size());
 
             _state = State::Idle;
 

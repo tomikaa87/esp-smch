@@ -58,17 +58,17 @@ void Smch::sendRemoteControlCommand(const uint8_t deviceIndex, const radio::Comm
     auto message = radio::Message{ request };
 
     if (!_radio.sendMessage(std::move(message))) {
-        _log.error("failed to send remote control message");
+        _log.error_P(PSTR("failed to send remote control message"));
     }
 }
 
 void Smch::handleWebApiCommand(WebApi::Command command, const uint8_t subDeviceIndex)
 {
-    _log.debug("handleWebApiCommand: command=%s, subDeviceIndex=%u", toString(command), subDeviceIndex);
+    _log.debug_P(PSTR("handleWebApiCommand: command=%s, subDeviceIndex=%u"), toString(command), subDeviceIndex);
 
     if (subDeviceIndex == 255) {
         if (!_commandQueue.empty()) {
-            _log.warning("handleWebApiCommand: command queue is not empty");
+            _log.warning_P(PSTR("handleWebApiCommand: command queue is not empty"));
             return;
         }
 

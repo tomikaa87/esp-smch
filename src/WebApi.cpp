@@ -2,9 +2,12 @@
 
 #include <algorithm>
 
-bool CommandRequestHandler::canHandle(HTTPMethod method, String uri)
+bool CommandRequestHandler::canHandle(
+    const HTTPMethod method,
+    const String& uri
+)
 {
-    _log.debug("canHandle: method=%d, uri=%s", method, uri.c_str());
+    _log.debug_P(PSTR("canHandle: method=%d, uri=%s"), method, uri.c_str());
 
     if (method == HTTP_GET && uri.startsWith("/api")) {
         return true;
@@ -15,10 +18,10 @@ bool CommandRequestHandler::canHandle(HTTPMethod method, String uri)
 
 bool CommandRequestHandler::handle(
     ESP8266WebServer::WebServerType& server,
-    HTTPMethod requestMethod,
-    String requestUri
+    const HTTPMethod requestMethod,
+    const String& requestUri
 ) {
-    _log.debug("handle: requestMethod=%d, requestUri=%s", requestMethod, requestUri.c_str());
+    _log.debug_P(PSTR("handle: requestMethod=%d, requestUri=%s"), requestMethod, requestUri.c_str());
 
     constexpr char CommandPath[] = "/api/command/";
 
@@ -52,7 +55,7 @@ void CommandRequestHandler::setCommandHandler(CommandHandler&& handler)
 
 WebApi::WebApi()
 {
-    _log.info("setting up command handling");
+    _log.info_P(PSTR("setting up command handling"));
 
     _commandRequestHandler.setCommandHandler([this](const String& commandPath) {
         return onIncomingCommandRequest(commandPath);
@@ -60,7 +63,7 @@ WebApi::WebApi()
 
     _webServer.addHandler(&_commandRequestHandler);
 
-    _log.info("starting the web server");
+    _log.info_P(PSTR("starting the web server"));
 
     _webServer.begin();
 }
@@ -81,7 +84,7 @@ CommandRequestHandler::HandlerResult WebApi::onIncomingCommandRequest(const Stri
         return CommandRequestHandler::HandlerResult::NotHandled;
     }
 
-    _log.debug("incoming command request: commandPath=%s", commandPath.c_str());
+    _log.debug_P(PSTR("incoming command request: commandPath=%s"), commandPath.c_str());
 
     constexpr char UpPath[] = "up/";
     constexpr char DownPath[] = "down/";
@@ -99,10 +102,10 @@ CommandRequestHandler::HandlerResult WebApi::onIncomingCommandRequest(const Stri
 
 CommandRequestHandler::HandlerResult WebApi::handleCommand(const Command command, const String& path)
 {
-    _log.debug("handleCommand: command=%s, path=%s", toString(command), path.c_str());
+    _log.debug_P(PSTR("handleCommand: command=%s, path=%s"), toString(command), path.c_str());
 
     if (!_commandHandler) {
-        _log.warning("handleCommand: command handler is null");
+        _log.warning_P(PSTR("handleCommand: command handler is null"));
         return CommandRequestHandler::HandlerResult::InternalError;
     }
 

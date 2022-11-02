@@ -9,8 +9,8 @@
 class CommandRequestHandler : public RequestHandler
 {
 public:
-    bool canHandle(HTTPMethod method, String uri) override;
-    bool handle(ESP8266WebServer::WebServerType& server, HTTPMethod requestMethod, String requestUri) override;
+    bool canHandle(HTTPMethod method, const String& uri) override;
+    bool handle(ESP8266WebServer::WebServerType& server, HTTPMethod requestMethod, const String& requestUri) override;
 
     enum class HandlerResult {
         NotHandled,

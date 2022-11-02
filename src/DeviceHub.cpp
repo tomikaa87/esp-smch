@@ -12,11 +12,11 @@ DeviceHub::DeviceHub(radio::Radio& radio)
 bool DeviceHub::startScan()
 {
     if (!isIdle()) {
-        _log.warning("cannot start scan, state machine is busy");
+        _log.warning_P(PSTR("cannot start scan, state machine is busy"));
         return false;
     }
 
-    _log.info("starting scan");
+    _log.info_P(PSTR("starting scan"));
     _state = State::Scanning;
     _scanner = {};
     return true;
@@ -32,7 +32,7 @@ bool DeviceHub::sendMessageToDevice(const size_t index, const protocol_msg_t& me
 {
     char address[] = "SMRR0";
     address[4] = '0' + _scanner.currentIndex;
-    _log.debug("scan: target device address: %s", address);
+    _log.debug_P(PSTR("scan: target device address: %s"), address);
 
     std::vector<uint8_t> payload;
     payload.resize(sizeof(protocol_msg_t));
@@ -64,12 +64,12 @@ bool DeviceHub::runScanStateMachine()
     switch (_scanner.state) {
         case Scanner::State::SendStatusRequest: {
             _scanner.timer = millis();
-            _log.debug("scan: sending status request to device index: %u", _scanner.currentIndex);
+            _log.debug_P(PSTR("scan: sending status request to device index: %u"), _scanner.currentIndex);
 
             const auto request = createStatusRequestMessage();
 
             if (!sendMessageToDevice(_scanner.currentIndex, request)) {
-                _log.warning("scan: failed to send message");
+                _log.warning_P(PSTR("scan: failed to send message"));
                 _scanner.state = Scanner::State::Finish;
             }
 
@@ -82,14 +82,14 @@ bool DeviceHub::runScanStateMachine()
             bool responseFound = false;
 
             for (const auto& msg : _receivedMessages) {
-                _log.debug("scan: reading received message");
+                _log.debug_P(PSTR("scan: reading received message"));
 
                 if (msg.msg_type != PROTO_MSG_READ_STATUS_RESULT) {
-                    _log.debug("scan: dropping irrelevant message with type: %d", msg.msg_type);
+                    _log.debug_P(PSTR("scan: dropping irrelevant message with type: %d"), msg.msg_type);
                     continue;
                 }
 
-                _log.debug("scan: relevant response message found");
+                _log.debug_P(PSTR("scan: relevant response message found"));
                 responseFound = true;
 
                 break;
@@ -98,10 +98,10 @@ bool DeviceHub::runScanStateMachine()
             _receivedMessages.clear();
 
             if (responseFound) {
-                _log.debug("scan: found active device index: %u", _scanner.currentIndex);
+                _log.debug_P(PSTR("scan: found active device index: %u"), _scanner.currentIndex);
                 _activeBits[_scanner.currentIndex] = true;
             } else if (millis() - _scanner.timer >= ScanStatusRequestTimeoutMs) {
-                _log.debug("scan: requiest timed out for device index: %u", _scanner.currentIndex);
+                _log.debug_P(PSTR("scan: requiest timed out for device index: %u"), _scanner.currentIndex);
             } else {
                 break;
             }
@@ -133,11 +133,11 @@ void DeviceHub::receiveMessages()
         const auto protoMsg = toProtoMsg(message);
 
         if (isMessageValid(protoMsg)) {
-            _log.warning("dropping invalid message");
+            _log.warning_P(PSTR("dropping invalid message"));
             continue;
         }
 
-        _log.debug("received valid message");
+        _log.debug_P(PSTR("received valid message"));
         print_protocol_message(&protoMsg);
 
         _receivedMessages.push_back(std::move(protoMsg));
